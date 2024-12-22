@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Welcome, {{ user.name }}</h2>
+<p>Your total balance: {{ user.balance }}</p>
+<h3>Your Groups</h3>
+<ul>
+    {% for group in groups %}
+        <li><a href="{% url 'group_detail' group.group_id %}">{{ group.name }}</a></li>
+    {% endfor %}
+</ul>
+<h3>Your Notifications</h3>
+<ul>
+    {% for notification in notifications %}
+        <li>{{ notification.message }} ({{ notification.status }})</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Your Expenses</h2>
+<ul>
+    {% for expense in expenses %}
+        <li>{{ expense.description }} - {{ expense.amount }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}
