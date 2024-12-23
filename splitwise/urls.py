@@ -20,8 +20,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    #anything start with playground/ will be redirected to playground.urls
-    path('splitapp/', include('splitapp.urls')),
     path('bot/', include('botapp.urls')),
-    path('__debug__/', include(debug_toolbar.urls)),
+    # other paths...
 ]

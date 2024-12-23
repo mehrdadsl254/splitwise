@@ -3,24 +3,50 @@
 {% block content %}
 <h2>Welcome, {{ user.name }}</h2>
 <p>Your total balance: {{ user.balance }}</p>
+
 <h3>Your Groups</h3>
 <ul>
     {% for group in groups %}
         <li><a href="{% url 'group_detail' group.group_id %}">{{ group.name }}</a></li>
     {% endfor %}
 </ul>
+
 <h3>Your Notifications</h3>
 <ul>
     {% for notification in notifications %}
         <li>{{ notification.message }} ({{ notification.status }})</li>
     {% endfor %}
 </ul>
-<h2>make group</h2>
-<form method="POST">
+
+<h2>Create Group</h2>
+<form method="POST" action="{% url 'create_group' %}">
     {% csrf_token %}
     <label for="name">Name:</label>
     <input type="text" name="name" required>
     <button type="submit">Create Group</button>
 </form>
+
+<h2>Search and Add Users to Group</h2>
+<form method="GET" action="{% url 'search_users' %}">
+    <label for="query">Search Users:</label>
+    <input type="text" name="query" required>
+    <input type="hidden" name="group_id" value="{{ group.group_id }}">
+    <button type="submit">Search</button>
+</form>
+
+{% if users %}
+    <h3>Search Results</h3>
+    <ul>
+        {% for user in users %}
+            <li>{{ user.name }} - 
+                <form method="POST" action="{% url 'add_user_to_group' group_id=group.group_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <button type="submit">Add to Group</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
 
 {% endblock %}

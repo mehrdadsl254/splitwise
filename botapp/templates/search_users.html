@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Search Users</h2>
+<form method="GET" action="{% url 'search_users' %}">
+    <label for="query">Search Users:</label>
+    <input type="text" name="query" required>
+    <input type="hidden" name="group_id" value="{{ group_id }}">
+    <button type="submit">Search</button>
+</form>
+
+{% if users %}
+    <h3>Search Results</h3>
+    <ul>
+        {% for user in users %}
+            <li>{{ user.name }} - 
+                <form method="POST" action="{% url 'add_user_to_group' group_id=group_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
+                    <button type="submit">Add to Group</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% endblock %}

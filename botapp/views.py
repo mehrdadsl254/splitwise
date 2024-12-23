@@ -7,6 +7,74 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+import uuid
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import requests
+import json
+
+BOT_TOKEN = "7904198802:AAFam5t6n60kBnxBaANXOIHPshEZpmQX2wI"
+BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
+WEBHOOK_URL = " https://b794-5-114-110-217.ngrok-free.app"
+
+def set_webhook():
+    webhook_url = f"{WEBHOOK_URL}/webhook"
+    response = requests.get(f"{BASE_URL}/setWebhook", params={"url": webhook_url})
+    if response.status_code == 200:
+        print("Webhook set successfully.")
+    else:
+        print(f"Failed to set webhook: {response.status_code}, {response.text}")
+
+@csrf_exempt
+def webhook_handler(request):
+    if request.method == 'POST':
+        update = json.loads(request.body)
+        print(update)
+        if 'message' in update and 'web_app_data' in update['message']:
+            user_id = update['message']['from']['id']
+            data = update['message']['web_app_data']['data']  # This is the data sent from the Web App
+
+            # Parse the data
+            try:
+                expenses = json.loads(data)  # Parse the JSON string into a Python list or dictionary
+                print(f"User {user_id} sent expenses: {expenses}")
+            except json.JSONDecodeError:
+                print("Invalid JSON data received")
+
+        data = json.loads(request.body)
+
+        # Check if the message contains text
+        if "message" in data and "text" in data["message"]:
+            chat_id = data["message"]["chat"]["id"]
+            first_name = data["message"]["chat"].get("first_name", "")
+            text = data["message"]["text"]
+
+            # Handle commands
+            if text.startswith("/addexpense"):
+                # Send a reply with a link to the mini app
+                mini_app_url = f"{WEBHOOK_URL}/miniapp"
+                reply_text = f"Please use this link to add an expense: {mini_app_url}"
+            else:
+                # Default response
+                reply_text = f"hi {first_name}"
+
+            send_message(chat_id, reply_text)
+
+        return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "bad request"}, status=400)
+
+def send_message(chat_id, text):
+    url = f"{BASE_URL}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    response = requests.post(url, json=payload)
+    if response.status_code != 200:
+        print(f"Failed to send message: {response.status_code}, {response.text}")
+
+def webapp(request):
+    return render(request, 'add_expense.html')
 
 # Create your views here.
 def say_hello(Request):
@@ -100,11 +168,37 @@ def dashboard(request):
     }
     return render(request, 'dashboard.html', context)
 
+@login_required
+def create_group(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        
+        group_id = str(uuid.uuid4())
+        group = Group.objects.create(
+            group_id=group_id,
+            name=name
+        )
+        group.members.add(request.user)
+        messages.success(request, 'Group created successfully.')
+        return redirect('dashboard')
+    return render(request, 'create_group.html')
 
+@login_required
+def add_user_to_group(request, group_id):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        group = get_object_or_404(Group, group_id=group_id)
+        user = get_object_or_404(User, user_id=user_id)
+        GroupMembers.objects.create(group=group, user=user)
+        messages.success(request, f'{user.name} added to group {group.name}.')
+        return redirect('group_detail', group_id=group_id)
 
-    users = User.objects.exclude(user_id=request.user.user_id)
-    return render(request, 'create_group.html', {'users': users})
-
+@login_required
+def search_users(request):
+    query = request.GET.get('query')
+    group_id = request.GET.get('group_id')
+    users = User.objects.filter(name__icontains=query)
+    return render(request, 'search_users.html', {'users': users, 'group_id': group_id})
 
 # Group List View
 @login_required
