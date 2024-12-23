@@ -39,44 +39,44 @@ def home(request):
     return render(request, 'home.html')
 
 # Sign-Up View
+
 def signup(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
+        password = request.POST.get('password')
 
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Email already registered.')
             return redirect('signup')
-        
-        
-        #increment by 1
-        new_user_id = email
-        user = User.objects.create(
-            user_id=new_user_id,
-            name=name,
+
+        user = User.objects.create_user(
             email=email,
+            name=name,
             phone=phone,
+            password=password  # Password will be hashed by the manager
         )
-        user.save()
         messages.success(request, 'Account created successfully. Please log in.')
         return redirect('login')
     return render(request, 'signup.html')
 
+
 # Login View
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
+
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
-        try:
-            
-            user = User.objects.get(email=email)
-            # Here, you'd compare passwords or use a custom authentication
-            
-            login(request, user)  # Customize for session handling
+        password = request.POST.get('password')
+        user = authenticate(request, email=email, password=password)
+
+        if user is not None:
+            login(request, user)
             return redirect('dashboard')
-            
-        except User.DoesNotExist:
-            return render(request, 'error.html', {'error': 'User not found.'})
+        else:
+            messages.error(request, 'Invalid email or password.')
     return render(request, 'login.html')
 
 # Logout View
@@ -100,11 +100,18 @@ def dashboard(request):
     }
     return render(request, 'dashboard.html', context)
 
+
+
+    users = User.objects.exclude(user_id=request.user.user_id)
+    return render(request, 'create_group.html', {'users': users})
+
+
 # Group List View
 @login_required
 def group_list(request):
     groups = Group.objects.filter(members=request.user)
     return render(request, 'group_list.html', {'groups': groups})
+
 
 # Group Detail View
 @login_required

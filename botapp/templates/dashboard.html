@@ -15,4 +15,12 @@
         <li>{{ notification.message }} ({{ notification.status }})</li>
     {% endfor %}
 </ul>
+<h2>make group</h2>
+<form method="POST">
+    {% csrf_token %}
+    <label for="name">Name:</label>
+    <input type="text" name="name" required>
+    <button type="submit">Create Group</button>
+</form>
+
 {% endblock %}
